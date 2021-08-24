@@ -1,49 +1,66 @@
-local M = {len = 0, cur_line = 0, cur_len = 0, cur_pos = 0}
+local M = {
+  gnfinder_url = "http://localhost:8080/api/v1",
+  len = 0,
+  cur_line = 0,
+  cur_len = 0,
+  cur_pos = 0
+}
+
+local name = {
+  starts = 0,
+  ends = 0
+}
+
 local u = require "gnames.util"
 local curl = require("plenary.curl")
 
-M._process = function(body, lenghts)
-  local pos = {}
-  body = string.gsub(body, "^.*%[", "")
-  body = string.gsub(body, "%].*", "")
-  body = string.gsub(body, "},{", "}щ{")
-  local names = vim.fn.split(body, "щ")
-  for _, v in pairs(names) do
-    local name = vim.fn.json_decode(v)
-    pos[#pos + 1] = {starts = name["start"], ends = name["end"]}
+local split = function(s, delimiter)
+  local result = {}
+  local from = 1
+  local delim_from, delim_to = string.find(s, delimiter, from)
+  while delim_from do
+    table.insert(result, string.sub(s, from, delim_from - 1))
+    from = delim_to + 1
+    delim_from, delim_to = string.find(s, delimiter, from)
   end
-
-  M.cur_line = 1
-  M.cur_len = lenghts[1]
-  for _, p in pairs(pos) do
-    print(vim.fn.printf("%d-%d, start: %d, line: %d, len: %d", p.starts, p.ends, M.cur_pos, M.cur_line, M.cur_len))
-    -- we need to find the line which where index is located
-    if p.starts > M.cur_len + M.len then
-      M.adjust_cur(lenghts, p.starts)
-    end
-    M.cur_pos = p.starts - M.len + 1
-    print(vim.fn.printf("%d-%d, start: %d, line: %d, len: %d", p.starts, p.ends, M.cur_pos, M.cur_line, M.cur_len))
-    print("")
-    local hi = vim.fn.printf('call matchaddpos("GnName", [[%d, %d, %d]])', M.cur_line, M.cur_pos, p.ends - p.starts)
-    vim.cmd(hi)
-  end
+  table.insert(result, string.sub(s, from))
+  return result
 end
 
-M.adjust_cur = function(lenghts, starts)
-  -- lengths is a table where line is line number and line_len is the
-  -- length of the line in bytes
-  for line, line_len in pairs(lenghts) do
-    if line > M.cur_line and starts > M.len + M.cur_len then
-      M.cur_line = M.cur_line + 1
-      M.len = M.len + M.cur_len
-      M.cur_len = line_len
-    elseif line > M.cur_line and starts > M.len and starts < M.len + M.cur_len then
-      M.cur_line = M.cur_line + 1
-      M.cur_len = line_len
-      return
-    end
+M._process = function(body, _)
+  local names = {}
+
+  local rows = split(body, "\n")
+  if #rows < 2 then
+    print("No names found")
+    return
   end
-  return
+
+  local count = 1
+  local header = {}
+  for _, v in pairs(rows) do
+    if count == 1 then
+      header = split(v, "\t")
+    elseif count > 1 then
+      local row = split(v, "\t")
+      if #row == #header then
+        name = {starts = row[4] + 1, ends = row[5] + 1}
+        names[#names + 1] = name
+      end
+    end
+    count = count + 1
+  end
+  print(vim.fn.printf("Found %d possible names occurrences", #names))
+
+  for i, n in pairs(names) do
+    print(vim.fn.printf("%d: %d, %d", i, n.starts, n.ends))
+    M.cur_line = vim.fn.byte2line(n.starts)
+    M.len = vim.fn.line2byte(M.cur_line)
+    M.cur_pos = n.starts - M.len + 1
+    print(vim.fn.printf("line %d, %d, %d", M.cur_line, M.cur_pos, n.ends - n.starts))
+    local hi = vim.fn.printf('call matchaddpos("GnName", [[%d, %d, %d]])', M.cur_line, M.cur_pos, n.ends - n.starts)
+    vim.cmd(hi)
+  end
 end
 
 M.find = function()
@@ -53,13 +70,14 @@ M.find = function()
     vim.fn.json_encode(
     {
       text = txt,
-      bytesOffset = true
+      bytesOffset = true,
+      -- verification = true,
+      format = "tsv"
     }
   )
   local resp =
     curl.post(
-    -- "https://gnfinder.globalnames.org/api/v1/find",
-    "http://localhost:8080/api/v1/find",
+    M.gnfinder_url .. "/find",
     {
       headers = {
         content_type = "application/json"
@@ -67,7 +85,7 @@ M.find = function()
       body = body
     }
   )
-  if resp.status == 200 and string.find(resp.body, "%[") then
+  if resp.status == 200 then
     -- txt_data.len is a table that contains length of all lines of the text
     M._process(resp.body, txt_data.len)
   end
