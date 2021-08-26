@@ -48,7 +48,7 @@ M._process = function(rows)
     end
     count = count + 1
   end
-  print(vim.fn.printf("Found %d possible names occurrences", #names))
+  print(vim.fn.printf("Found and highlightedj %d possible names occurrences", #names))
 
   for _, n in pairs(names) do
     M.cur_line = vim.fn.byte2line(n.starts)
