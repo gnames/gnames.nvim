@@ -16,7 +16,7 @@ Plug 'gnames/gnames.nvim'
 
 ### Packer
 
-```
+```lua
 use {
   'gnames/gnames.nvim',
   requires {'nvim-lua/plenary.nvim'}
