@@ -7,4 +7,6 @@ vim.api.nvim_set_keymap("n", ",r", ":luafile dev/init.lua<cr>", {})
 
 GN = require("gnames")
 
+GN.setup()
+
 vim.api.nvim_set_keymap("n", ",f", ":lua GN.find()<cr>", {})

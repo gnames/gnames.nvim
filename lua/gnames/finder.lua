@@ -1,10 +1,4 @@
-local M = {
-  gnfinder_url = "https://gnfinder.globalnames.org/api/v1",
-  len = 0,
-  cur_line = 0,
-  cur_len = 0,
-  cur_pos = 0
-}
+local M = {}
 
 local name = {
   starts = 0,
@@ -48,14 +42,30 @@ M._process = function(rows)
     end
     count = count + 1
   end
-  print(vim.fn.printf("Found and highlightedj %d possible names occurrences", #names))
+  print(vim.fn.printf("Found and highlighted %d possible names occurrences", #names))
 
+  local starts_line = 0
+  local ends_line = 0
+  local line_len = 0
+  local pos = 0
+  local name_len = 0
+  local cmd = ""
   for _, n in pairs(names) do
-    M.cur_line = vim.fn.byte2line(n.starts)
-    M.len = vim.fn.line2byte(M.cur_line)
-    M.cur_pos = n.starts - M.len + 1
-    local hi = vim.fn.printf('call matchaddpos("GnName", [[%d, %d, %d]])', M.cur_line, M.cur_pos, n.ends - n.starts)
-    vim.cmd(hi)
+    starts_line = vim.fn.byte2line(n.starts)
+    ends_line = vim.fn.byte2line(n.ends)
+    line_len = vim.fn.line2byte(starts_line)
+    pos = n.starts - line_len + 1
+    name_len = n.ends - n.starts
+    cmd = vim.fn.printf('call matchaddpos("GnName", [[%d, %d, %d]])', starts_line, pos, name_len)
+    vim.cmd(cmd)
+
+    if starts_line ~= ends_line then
+      pos = 1
+      line_len = vim.fn.line2byte(ends_line)
+      name_len = n.ends + 1 - line_len
+      cmd = vim.fn.printf('call matchaddpos("GnName", [[%d, %d, %d]])', ends_line, 1, name_len)
+      vim.cmd(cmd)
+    end
   end
 end
 
