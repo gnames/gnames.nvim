@@ -1,5 +1,3 @@
-local M = {
-  gnfinder_url = "https://gnfinder.globalnames.org/api/v1"
-}
+local M = {}
 
 return M

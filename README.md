@@ -2,6 +2,19 @@
 
 Neovim plugin to highlight scientific names in with biological texts.
 
+## Prerequisites
+
+1. This plugin requires internet for name verification.
+
+2. The plugin uses a command line tool [gnfinder]. You can install with
+   [homebrew] if available on your system, or copy an executable for your
+   operating system according to [instructions][gnfinder install].
+
+    ```bash
+    brew tap gnames/gn
+    brew install gnfinder
+    ```
+
 ## Install
 
 This plugin is compatible with Neovim v0.5 and higher. It has a dependency
@@ -26,17 +39,7 @@ use {
 ## Configuration
 
 ```viml
-:lua require('gnames').setup()
-```
-
-### Configuration parameters
-
-Default configuration:
-
-```lua
-require('gnames').setup({
-  gnfinder_url = "https://gnfinder.globalnames.org/api/v1"
-})
+lua require('gnames').setup()
 ```
 
 ## Usage
@@ -45,6 +48,12 @@ Open a text that contains biological scientific names and run the command:
 
 ```viml
 :GNFind
+```
+
+To remove highlights:
+
+```viml
+:GNClear
 ```
 
 ## Development
@@ -70,3 +79,6 @@ When nvim started, run once:
 To refresh plugin use `,r`
 
 To find names `,f`
+
+[gnfinder]: https://github.com/gnames/gnfinder
+[gnfinder install]: https://github.com/gnames/gnfinder#install-as-a-command-line-app

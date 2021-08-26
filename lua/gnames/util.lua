@@ -1,17 +1,24 @@
 local M = {}
 
-function M.txt()
-  local content = vim.api.nvim_buf_get_lines(0, 0, vim.api.nvim_buf_line_count(0), false)
-  local txt = table.concat(content, "\n")
-  local lenghts = {}
-  for i, line in pairs(content) do
-    lenghts[i] = string.len(line) + 1
+function M.gnfinder(path)
+  local cmd = vim.fn.printf("sh -c 'gnfinder -U -v -b -f tsv %s'", path)
+  local f = assert(io.popen(cmd))
+  vim.defer_fn(
+    function()
+      f:flush()
+      f:close()
+    end,
+    5000
+  )
+  local names = {}
+  for line in f:lines() do
+    names[#names + 1] = line
   end
-  return {text = txt, len = lenghts}
+  return names
 end
 
 -- Merges content of two table and returns a new table
-function M.merge_tables(t1, t2)
+M.merge_tables = function(t1, t2)
   for k, v in pairs(t2) do
     if (type(v) == "table") and (type(t1[k] or false) == "table") then
       M.merge_tables(t1[k], t2[k])

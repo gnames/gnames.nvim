@@ -11,8 +11,7 @@ local name = {
   ends = 0
 }
 
-local curl = require "plenary.curl"
-local u = require "gnames.util"
+local util = require "gnames.util"
 
 local split = function(s, delimiter)
   local result = {}
@@ -27,10 +26,9 @@ local split = function(s, delimiter)
   return result
 end
 
-M._process = function(body, _)
+M._process = function(rows)
   local names = {}
 
-  local rows = split(body, "\n")
   if #rows < 2 then
     print("No names found")
     return
@@ -62,30 +60,11 @@ M._process = function(body, _)
 end
 
 M.find = function()
-  local txt_data = u.txt()
-  local txt = txt_data.text
-  local body =
-    vim.fn.json_encode(
-    {
-      text = txt,
-      bytesOffset = true,
-      verification = true,
-      format = "tsv"
-    }
-  )
-  local resp =
-    curl.post(
-    M.gnfinder_url .. "/find",
-    {
-      headers = {
-        content_type = "application/json"
-      },
-      body = body
-    }
-  )
-  if resp.status == 200 then
+  local path = vim.fn.expand("%")
+  local names = util.gnfinder(path)
+  if #names > 1 then
     -- txt_data.len is a table that contains length of all lines of the text
-    M._process(resp.body, txt_data.len)
+    M._process(names)
   end
 end
 

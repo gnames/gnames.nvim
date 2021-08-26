@@ -4,7 +4,8 @@ local gnf = require("gnames.finder")
 local util = require("gnames.util")
 
 local commands = {
-  "command! GNFind lua require('gnames.finder').find()"
+  "command! GNFind lua require('gnames.finder').find()",
+  "command! GNClear call clearmatches()"
 }
 
 local setup = function(opts)
