@@ -11,8 +11,8 @@ local name = {
   ends = 0
 }
 
+local curl = require "plenary.curl"
 local u = require "gnames.util"
-local curl = require("plenary.curl")
 
 local split = function(s, delimiter)
   local result = {}
@@ -52,12 +52,10 @@ M._process = function(body, _)
   end
   print(vim.fn.printf("Found %d possible names occurrences", #names))
 
-  for i, n in pairs(names) do
-    print(vim.fn.printf("%d: %d, %d", i, n.starts, n.ends))
+  for _, n in pairs(names) do
     M.cur_line = vim.fn.byte2line(n.starts)
     M.len = vim.fn.line2byte(M.cur_line)
     M.cur_pos = n.starts - M.len + 1
-    print(vim.fn.printf("line %d, %d, %d", M.cur_line, M.cur_pos, n.ends - n.starts))
     local hi = vim.fn.printf('call matchaddpos("GnName", [[%d, %d, %d]])', M.cur_line, M.cur_pos, n.ends - n.starts)
     vim.cmd(hi)
   end

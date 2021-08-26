@@ -19,7 +19,7 @@ Plug 'gnames/gnames.nvim'
 ```lua
 use {
   'gnames/gnames.nvim',
-  requires {'nvim-lua/plenary.nvim'}
+  requires = {'nvim-lua/plenary.nvim'}
 }
 ```
 
