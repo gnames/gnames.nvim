@@ -1,5 +1,5 @@
-local config = {
+local M = {
   gnfinder_url = "https://gnfinder.globalnames.org/api/v1"
 }
 
-return config
+return M

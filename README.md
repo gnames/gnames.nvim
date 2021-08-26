@@ -1,6 +1,51 @@
 # gnames.nvim
 
-Neovim plugin to work with biological texts.
+Neovim plugin to highlight scientific names in with biological texts.
+
+## Install
+
+This plugin is compatible with Neovim v0.5 and higher. It has a dependency
+to `plenary` plugin.
+
+### Plug
+
+```viml
+Plug 'nvim-lua/plenary.nvim'
+Plug 'gnames/gnames.nvim'
+```
+
+### Packer
+
+```
+use {
+  'gnames/gnames.nvim',
+  requires {'nvim-lua/plenary.nvim'}
+}
+```
+
+## Configuration
+
+```viml
+:lua require('gnames').setup()
+```
+
+### Configuration parameters
+
+Default configuration:
+
+```lua
+require('gnames').setup({
+  gnfinder_url = "https://gnfinder.globalnames.org/api/v1"
+})
+```
+
+## Usage
+
+Open a text that contains biological scientific names and run the command:
+
+```viml
+:GNFind
+```
 
 ## Development
 

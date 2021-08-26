@@ -1,5 +1,5 @@
 local M = {
-  gnfinder_url = "http://localhost:8080/api/v1",
+  gnfinder_url = "https://gnfinder.globalnames.org/api/v1",
   len = 0,
   cur_line = 0,
   cur_len = 0,
@@ -71,7 +71,7 @@ M.find = function()
     {
       text = txt,
       bytesOffset = true,
-      -- verification = true,
+      verification = true,
       format = "tsv"
     }
   )
