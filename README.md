@@ -23,17 +23,13 @@ to `plenary` plugin.
 ### Plug
 
 ```viml
-Plug 'nvim-lua/plenary.nvim'
 Plug 'gnames/gnames.nvim'
 ```
 
 ### Packer
 
 ```lua
-use {
-  'gnames/gnames.nvim',
-  requires = {'nvim-lua/plenary.nvim'}
-}
+use 'gnames/gnames.nvim'
 ```
 
 ## Configuration
