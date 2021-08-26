@@ -52,6 +52,18 @@ To remove highlights:
 :GNClear
 ```
 
+### Dealing with files that contain BOM <FEFF> characters
+
+BOM are zero-length characters that are invisible for most editors. They might appear in a text file because of an OCR errors or to indicate UTF encoding. These characters are invisible for name-finding tool and
+they interfere with highlighing. To remove them you can use the following
+`awk` command:
+
+```awk
+awk '{ gsub(/\xef\xbb\xbf/,""); print }' INFILE > OUTFILE
+```
+
+Also, see this [StackOverflow question][nobom]
+
 ## Development
 
 ```bash
@@ -78,3 +90,4 @@ To find names `,f`
 
 [gnfinder]: https://github.com/gnames/gnfinder
 [gnfinder install]: https://github.com/gnames/gnfinder#install-as-a-command-line-app
+[nobom]: https://stackoverflow.com/questions/7297888/0xef-0xbb-0xbf-character-showing-up-in-files-how-to-remove-them
