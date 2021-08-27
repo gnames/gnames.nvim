@@ -4,8 +4,12 @@ local gnf = require("gnames.finder")
 local util = require("gnames.util")
 
 local commands = {
+  -- Finds scientific names in a current buffer and highlights them
   "command! GNFind lua require('gnames.finder').find()",
-  "command! GNClear call clearmatches()"
+  -- Removes highlighs
+  "command! GNClear lua require('gnames.finder').clear()",
+  -- Toggles side panel with list of found names
+  "command! GNPanelToggle lua require('gnames.panel').toggle()"
 }
 
 local setup = function(opts)

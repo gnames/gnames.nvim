@@ -1,28 +1,15 @@
-local M = {}
-
-local name = {
-  starts = 0,
-  ends = 0
-}
+local M = {names = {}}
 
 local util = require "gnames.util"
+local str = require "gnames.string"
 
-local split = function(s, delimiter)
-  local result = {}
-  local from = 1
-  local delim_from, delim_to = string.find(s, delimiter, from)
-  while delim_from do
-    table.insert(result, string.sub(s, from, delim_from - 1))
-    from = delim_to + 1
-    delim_from, delim_to = string.find(s, delimiter, from)
-  end
-  table.insert(result, string.sub(s, from))
-  return result
-end
-
+---
+---Takes TSV rows with names information from gnfinder output and highlights
+---finds names in the buffer and highlights them.
+---
+---@param rows table of tables
 M._process = function(rows)
-  local names = {}
-
+  M.names = {}
   if #rows < 2 then
     print("No names found")
     return
@@ -32,50 +19,72 @@ M._process = function(rows)
   local header = {}
   for _, v in pairs(rows) do
     if count == 1 then
-      header = split(v, "\t")
+      header = str.split(v, "\t")
     elseif count > 1 then
-      local row = split(v, "\t")
+      local row = str.split(v, "\t")
       if #row == #header then
-        name = {starts = row[4] + 1, ends = row[5] + 1}
-        names[#names + 1] = name
+        local name = {
+          name = row[3],
+          starts = row[4] + 1,
+          ends = row[5] + 1,
+          odds = row[6],
+          cardinality = row[7],
+          annot = row[8],
+          verif = row[11],
+          ed = row[12],
+          match_name = row[13],
+          match_id = row[15],
+          source = row[17]
+        }
+        M.names[#M.names + 1] = name
       end
     end
     count = count + 1
   end
-  print(vim.fn.printf("Found and highlighted %d possible names occurrences", #names))
+  print(string.format("Found and highlighted %d possible names occurrences", #M.names))
 
-  local starts_line = 0
-  local ends_line = 0
-  local line_len = 0
-  local pos = 0
-  local name_len = 0
-  local cmd = ""
-  for _, n in pairs(names) do
+  local starts_line, ends_line, line_len, pos, name_len, cmd
+  for i, n in pairs(M.names) do
     starts_line = vim.fn.byte2line(n.starts)
     ends_line = vim.fn.byte2line(n.ends)
     line_len = vim.fn.line2byte(starts_line)
     pos = n.starts - line_len + 1
     name_len = n.ends - n.starts
-    cmd = vim.fn.printf('call matchaddpos("GnName", [[%d, %d, %d]])', starts_line, pos, name_len)
+    M.names[i].line = starts_line
+    M.names[i].line_offset = pos
+    cmd = string.format('call matchaddpos("GnName", [[%d, %d, %d]])', starts_line, pos, name_len)
     vim.cmd(cmd)
 
     if starts_line ~= ends_line then
       pos = 1
       line_len = vim.fn.line2byte(ends_line)
       name_len = n.ends + 1 - line_len
-      cmd = vim.fn.printf('call matchaddpos("GnName", [[%d, %d, %d]])', ends_line, 1, name_len)
+      cmd = string.format('call matchaddpos("GnName", [[%d, %d, %d]])', ends_line, 1, name_len)
       vim.cmd(cmd)
     end
   end
 end
 
+---
+---Finds scientific names in current buffer and highlights them.
+---Sets the buffer's gnames variable that contains found names data.
+---
 M.find = function()
+  M.clear()
   local path = vim.fn.expand("%")
   local names = util.gnfinder(path)
   if #names > 1 then
-    -- txt_data.len is a table that contains length of all lines of the text
     M._process(names)
+    vim.b.gnames = M.names
   end
+end
+
+---
+---Cleans up all highlights and empties the buffer's gnames table.
+---
+M.clear = function()
+  vim.b.gnames = {}
+  vim.cmd("call clearmatches()")
 end
 
 return M
