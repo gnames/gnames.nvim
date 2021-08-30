@@ -1,1 +1,5 @@
-vim.cmd "hi GnName guifg=green ctermfg=green"
+vim.cmd "hi GNExactMatch guifg=#008800 ctermfg=10"
+vim.cmd "hi GNFuzzyMatch guifg=#dddd00 ctermfg=186"
+vim.cmd "hi GNPartialExactMatch guifg=#88ff88 ctermfg=71"
+vim.cmd "hi GNPartialFuzzyMatch guifg=#ffff88 ctermfg=222"
+vim.cmd "hi GNNoMatch guifg=#ff8888 ctermfg=217"

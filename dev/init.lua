@@ -1,5 +1,6 @@
 package.loaded["dev"] = nil
 package.loaded["gnames"] = nil
+package.loaded["gnames.settings"] = nil
 package.loaded["gnames.util"] = nil
 package.loaded["gnames.config"] = nil
 package.loaded["gnames.panel"] = nil

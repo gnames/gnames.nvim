@@ -1,7 +1,10 @@
 local M = {names = {}}
 
 local util = require "gnames.util"
+local config = require "gnames.config"
 local str = require "gnames.string"
+
+local text_ns = vim.api.nvim_create_namespace(config.text_ns)
 
 ---
 ---Takes TSV rows with names information from gnfinder output and highlights
@@ -43,25 +46,26 @@ M._process = function(rows)
   end
   print(string.format("Found and highlighted %d possible names occurrences", #M.names))
 
-  local starts_line, ends_line, line_len, pos, name_len, cmd
+  local line_start, line_end, line_len, pos_start, pos_end, name_len, cmd
   for i, n in pairs(M.names) do
-    starts_line = vim.fn.byte2line(n.starts)
-    ends_line = vim.fn.byte2line(n.ends)
-    line_len = vim.fn.line2byte(starts_line)
-    pos = n.starts - line_len + 1
-    name_len = n.ends - n.starts
-    M.names[i].line = starts_line
-    M.names[i].line_offset = pos
-    cmd = string.format('call matchaddpos("GnName", [[%d, %d, %d]])', starts_line, pos, name_len)
-    vim.cmd(cmd)
-
-    if starts_line ~= ends_line then
-      pos = 1
-      line_len = vim.fn.line2byte(ends_line)
-      name_len = n.ends + 1 - line_len
-      cmd = string.format('call matchaddpos("GnName", [[%d, %d, %d]])', ends_line, 1, name_len)
-      vim.cmd(cmd)
+    line_start = vim.fn.byte2line(n.starts)
+    line_end = vim.fn.byte2line(n.ends)
+    line_len = vim.fn.line2byte(line_start)
+    pos_start = n.starts - line_len
+    pos_end = n.ends - line_len
+    if line_end ~= line_start then
+      pos_end = -1
     end
+    local grp = config.hi_groups[n.verif]
+    local buf = vim.api.nvim_get_current_buf()
+    vim.api.nvim_buf_add_highlight(buf, text_ns, grp, line_start - 1, pos_start, pos_end)
+
+    if line_start ~= line_end then
+      pos_end = n.ends - vim.fn.line2byte(line_end)
+      vim.api.nvim_buf_add_highlight(buf, text_ns, grp, line_end - 1, 0, pos_end)
+    end
+    M.names[i].line = line_start
+    M.names[i].col = vim.fn.charidx(vim.fn.getline(line_start), pos_start + 1)
   end
 end
 
@@ -84,6 +88,7 @@ end
 ---
 M.clear = function()
   vim.b.gnames = {}
+  vim.api.nvim_buf_clear_namespace(0, text_ns, 0, -1)
   vim.cmd("call clearmatches()")
 end
 

@@ -5,7 +5,7 @@ local api = vim.api
 local M = {}
 
 local panel_var = "GNamesForBuf"
-local gnames_ns = api.nvim_create_namespace "gnames_panel"
+local panel_ns = api.nvim_create_namespace(config.panel_ns)
 
 ---
 ---Checks if a buffer is opened in at least one window (not hidden).
@@ -33,6 +33,18 @@ local function close_buf_windows(bufnr)
       api.nvim_win_close(window, true)
     end
   )
+end
+
+local function focus_buf(bufnr)
+  if not bufnr then
+    return
+  end
+
+  local windows = vim.fn.win_findbuf(bufnr)
+
+  if windows[1] then
+    api.nvim_set_current_win(windows[1])
+  end
 end
 
 ---
@@ -168,21 +180,43 @@ end
 M._update_names = function(buf_text)
   local names = vim.fn.getbufvar(buf_text, "gnames")
   local buf_names = M._entries[buf_text].names_bufnr
-  local lines = {}
+  local render = {}
   for i, name in pairs(names) do
+    local record = {lines_num = 5}
+    local lines = {}
+
     lines[#lines + 1] = string.format("%d: %s", i, name.name)
-    lines[#lines + 1] = string.format("      line: %d, offset: %d", name.line, name.line_offset)
-    lines[#lines + 1] = string.format("      odds: %0.2f, cardinality: %d", name.odds, name.cardinality)
-    lines[#lines + 1] = string.format("      verif: %s", name.verif)
+    lines[#lines + 1] = string.format("   line: %d, offset: %d", name.line, name.col)
+    lines[#lines + 1] = string.format("   odds: %0.2f, cardinality: %d", name.odds, name.cardinality)
+    lines[#lines + 1] = string.format("   verif: %s", name.verif)
     if name.verif ~= "NoMatch" then
-      lines[#lines + 1] = string.format("        source: %s", name.source)
-      lines[#lines + 1] = string.format("        id: %s", name.match_id)
-      lines[#lines + 1] = string.format("        name: %s", name.match_name)
-      lines[#lines + 1] = string.format("        edit_distance: %d", name.ed)
+      record.lines_num = record.lines_num + 4
+      lines[#lines + 1] = string.format("     source: %s", name.source)
+      lines[#lines + 1] = string.format("     id: %s", name.match_id)
+      lines[#lines + 1] = string.format("     name: %s", name.match_name)
+      lines[#lines + 1] = string.format("     edit_distance: %d", name.ed)
     end
     lines[#lines + 1] = ""
+    record.lines = lines
+    render[#render + 1] = record
   end
-  api.nvim_buf_set_lines(buf_names, 0, -1, false, lines)
+
+  local ls = {}
+  for _, rec in pairs(render) do
+    for _, l in pairs(rec.lines) do
+      ls[#ls + 1] = l
+    end
+  end
+  api.nvim_buf_set_lines(buf_names, 0, -1, false, ls)
+
+  local count = 0
+  for i, rec in pairs(render) do
+    local grp = config.hi_groups[names[i].verif]
+    vim.api.nvim_buf_add_highlight(buf_names, panel_ns, grp, count, 3, -1)
+    count = count + #rec.lines
+  end
+  focus_buf(buf_names)
+  vim.cmd([[match Structure /\v[0-9a-z_]+:/]])
 end
 
 M.key_down = function(bufnr)
