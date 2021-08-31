@@ -4,8 +4,9 @@ local api = vim.api
 
 local M = {}
 
-local names_var = "GNamesNamesBuf"
+local text_var = "GNamesTextBuf"
 local names_ns = api.nvim_create_namespace(config.names_ns)
+local text_hl_ns = api.nvim_create_namespace(config.text_hl_ns)
 
 ---
 ---Checks if a buffer is opened in at least one window (not hidden).
@@ -77,10 +78,10 @@ end
 ---
 ---Creates a buffer entry if needed.
 ---
----@param for_buf number
-local function setup_buf(for_buf)
-  if M._entries[for_buf].names_bufnr then
-    return M._entries[for_buf].names_bufnr
+---@param buf_text number
+local function setup_buf(buf_text)
+  if M._entries[buf_text].names_bufnr then
+    return M._entries[buf_text].names_bufnr
   end
 
   local buf = api.nvim_create_buf(false, false)
@@ -89,8 +90,21 @@ local function setup_buf(for_buf)
   api.nvim_buf_set_option(buf, "swapfile", false)
   api.nvim_buf_set_option(buf, "buflisted", false)
   api.nvim_buf_set_option(buf, "filetype", "gnamespanel")
-  api.nvim_buf_set_var(buf, names_var, for_buf)
+  api.nvim_buf_set_var(buf, text_var, buf_text)
 
+  vim.api.nvim_exec(
+    string.format(
+      [[
+  augroup GNamesPanel_%d
+    autocmd!
+    autocmd CursorMoved <buffer=%d> lua require'gnames.names'.highlight_name()
+  augroup END
+  ]],
+      buf,
+      buf
+    ),
+    true
+  )
   -- vim.cmd(string.format("augroup GNamesPanel_%d", buf))
   -- vim.cmd "au!"
   -- vim.cmd(string.format([[autocmd CursorMoved <buffer=%d> lua require'gnames.panel'.highlight_name(%d)]], buf, for_buf))
@@ -115,7 +129,7 @@ local function setup_buf(for_buf)
       buf,
       "n",
       mapping,
-      string.format(':lua require "gnames.names".%s(%d)<CR>', func, for_buf),
+      string.format(':lua require "gnames.names".%s(%d)<CR>', func, buf_text),
       {silent = true}
     )
   end
@@ -125,7 +139,7 @@ local function setup_buf(for_buf)
     false,
     {
       on_detach = function()
-        clear_entry(for_buf)
+        clear_entry(buf_text)
       end
     }
   )
@@ -182,7 +196,7 @@ M._update_names = function(buf_text)
   local buf_names = M._entries[buf_text].names_bufnr
   local render = {}
   for i, name in pairs(names) do
-    local record = {lines_num = 5}
+    local record = {}
     local lines = {}
 
     lines[#lines + 1] = string.format("%d: %s", i, name.name)
@@ -190,7 +204,6 @@ M._update_names = function(buf_text)
     lines[#lines + 1] = string.format("   odds: %s, cardinality: %s", name.odds, name.cardinality)
     lines[#lines + 1] = string.format("   verif: %s", name.verif)
     if name.verif ~= "NoMatch" then
-      record.lines_num = record.lines_num + 4
       lines[#lines + 1] = string.format("     source: %s", name.source)
       lines[#lines + 1] = string.format("     id: %s", name.match_id)
       lines[#lines + 1] = string.format("     name: %s", name.match_name)
@@ -202,9 +215,12 @@ M._update_names = function(buf_text)
   end
 
   local ls = {}
-  for _, rec in pairs(render) do
+  local line_dict = {}
+  for i, rec in pairs(render) do
     for _, l in pairs(rec.lines) do
+      render[i].line = #ls
       ls[#ls + 1] = l
+      line_dict[#ls] = i
     end
   end
   api.nvim_buf_set_lines(buf_names, 0, -1, false, ls)
@@ -217,6 +233,36 @@ M._update_names = function(buf_text)
   end
   focus_buf(buf_names)
   vim.cmd([[match Structure /\v[0-9a-z_]+:/]])
+  M._entries[buf_text].render = render
+  M._entries[buf_text].line_dict = line_dict
+  M.highlight_name()
+end
+
+M.highlight_name = function()
+  local buf = api.nvim_get_current_buf()
+  local success, buf_text = pcall(api.nvim_buf_get_var, buf, text_var)
+  if not success or buf_text == nil then
+    return
+  end
+  local line_dict = M._entries[buf_text].line_dict
+  if line_dict == nil then
+    return
+  end
+
+  local names = M._entries[buf_text].names
+  local line = vim.fn.line(".")
+  local name_num = line_dict[line]
+  local n = names[name_num]
+  util.for_each_buf_window(
+    buf_text,
+    function(window)
+      vim.api.nvim_buf_clear_namespace(buf_text, text_hl_ns, 0, -1)
+      for _, hl in pairs(n.hls) do
+        api.nvim_win_set_cursor(window, {n.line, n.col - 1})
+        vim.api.nvim_buf_add_highlight(buf_text, text_hl_ns, "Visual", hl.line, hl.starts, hl.ends)
+      end
+    end
+  )
 end
 
 M.key_down = function(bufnr)
@@ -231,11 +277,12 @@ end
 ---Opens a panel with names, or closes such panel, if it is opened.
 ---
 ---@param buf_text nil|number
-M.toggle = function(buf_text)
-  buf_text = buf_text or api.nvim_get_current_buf()
+M.toggle = function(buf)
+  buf = buf or api.nvim_get_current_buf()
+  local buf_text = buf
 
-  local success, for_buf = pcall(api.nvim_buf_get_var, buf_text, names_var)
-
+  -- if we are in a panel, panel keeps the number of a text buffer in a var
+  local success, for_buf = pcall(api.nvim_buf_get_var, buf, text_var)
   if success and for_buf then
     buf_text = for_buf
   end

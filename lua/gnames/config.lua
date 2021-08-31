@@ -1,6 +1,8 @@
 local M = {
   text_ns = "gnames_text_namespace",
-  names_ns = "gnames_names_namespace"
+  names_ns = "gnames_names_namespace",
+  text_hl_ns = "gnames_text_hl_namespace",
+  names_hl_ns = "gnames_names_hl_namespace"
 }
 
 M.hi_groups = {
