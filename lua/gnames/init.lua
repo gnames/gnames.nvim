@@ -9,7 +9,7 @@ local commands = {
   -- Removes highlighs
   "command! GNClear lua require('gnames.finder').clear()",
   -- Toggles side panel with list of found names
-  "command! GNPanelToggle lua require('gnames.panel').toggle()"
+  "command! GNPanelToggle lua require('gnames.names').toggle()"
 }
 
 local setup = function(opts)

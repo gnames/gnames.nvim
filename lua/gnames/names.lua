@@ -4,8 +4,8 @@ local api = vim.api
 
 local M = {}
 
-local panel_var = "GNamesForBuf"
-local panel_ns = api.nvim_create_namespace(config.panel_ns)
+local names_var = "GNamesNamesBuf"
+local names_ns = api.nvim_create_namespace(config.names_ns)
 
 ---
 ---Checks if a buffer is opened in at least one window (not hidden).
@@ -89,7 +89,7 @@ local function setup_buf(for_buf)
   api.nvim_buf_set_option(buf, "swapfile", false)
   api.nvim_buf_set_option(buf, "buflisted", false)
   api.nvim_buf_set_option(buf, "filetype", "gnamespanel")
-  api.nvim_buf_set_var(buf, panel_var, for_buf)
+  api.nvim_buf_set_var(buf, names_var, for_buf)
 
   -- vim.cmd(string.format("augroup GNamesPanel_%d", buf))
   -- vim.cmd "au!"
@@ -115,7 +115,7 @@ local function setup_buf(for_buf)
       buf,
       "n",
       mapping,
-      string.format(':lua require "gnames.panel".%s(%d)<CR>', func, for_buf),
+      string.format(':lua require "gnames.names".%s(%d)<CR>', func, for_buf),
       {silent = true}
     )
   end
@@ -134,7 +134,7 @@ local function setup_buf(for_buf)
 end
 
 ---
----Contains entries for all panels with their names.
+---Contains entries for all texts with their names.
 ---
 M._entries =
   setmetatable(
@@ -178,7 +178,7 @@ M._open = function(buf_text)
 end
 
 M._update_names = function(buf_text)
-  local names = vim.fn.getbufvar(buf_text, "gnames")
+  local names = M._entries[buf_text].names
   local buf_names = M._entries[buf_text].names_bufnr
   local render = {}
   for i, name in pairs(names) do
@@ -187,7 +187,7 @@ M._update_names = function(buf_text)
 
     lines[#lines + 1] = string.format("%d: %s", i, name.name)
     lines[#lines + 1] = string.format("   line: %d, offset: %d", name.line, name.col)
-    lines[#lines + 1] = string.format("   odds: %0.2f, cardinality: %d", name.odds, name.cardinality)
+    lines[#lines + 1] = string.format("   odds: %s, cardinality: %s", name.odds, name.cardinality)
     lines[#lines + 1] = string.format("   verif: %s", name.verif)
     if name.verif ~= "NoMatch" then
       record.lines_num = record.lines_num + 4
@@ -212,7 +212,7 @@ M._update_names = function(buf_text)
   local count = 0
   for i, rec in pairs(render) do
     local grp = config.hi_groups[names[i].verif]
-    vim.api.nvim_buf_add_highlight(buf_names, panel_ns, grp, count, 3, -1)
+    vim.api.nvim_buf_add_highlight(buf_names, names_ns, grp, count, 3, -1)
     count = count + #rec.lines
   end
   focus_buf(buf_names)
@@ -234,7 +234,7 @@ end
 M.toggle = function(buf_text)
   buf_text = buf_text or api.nvim_get_current_buf()
 
-  local success, for_buf = pcall(api.nvim_buf_get_var, buf_text, panel_var)
+  local success, for_buf = pcall(api.nvim_buf_get_var, buf_text, names_var)
 
   if success and for_buf then
     buf_text = for_buf

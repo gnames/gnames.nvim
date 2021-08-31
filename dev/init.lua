@@ -3,7 +3,7 @@ package.loaded["gnames"] = nil
 package.loaded["gnames.settings"] = nil
 package.loaded["gnames.util"] = nil
 package.loaded["gnames.config"] = nil
-package.loaded["gnames.panel"] = nil
+package.loaded["gnames.names"] = nil
 package.loaded["gnames.finder"] = nil
 
 vim.api.nvim_set_keymap("n", ",r", ":luafile dev/init.lua<cr>", {})

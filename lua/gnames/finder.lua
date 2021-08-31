@@ -76,10 +76,14 @@ end
 M.find = function()
   M.clear()
   local path = vim.fn.expand("%")
-  local names = util.gnfinder(path)
-  if #names > 1 then
-    M._process(names)
-    vim.b.gnames = M.names
+  local gnf_names = util.gnfinder(path)
+  if #gnf_names > 1 then
+    M._process(gnf_names)
+    local buf = vim.api.nvim_get_current_buf()
+
+    local panel = require("gnames.names")
+    panel._entries[buf].names = M.names
+    panel.toggle(buf)
   end
 end
 
