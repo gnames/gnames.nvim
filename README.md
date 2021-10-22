@@ -1,13 +1,13 @@
 # gnames.nvim
 
-Neovim plugin to highlight scientific names in with biological texts.
+Neovim plugin to highlight scientific names in biological texts.
 
 ## Prerequisites
 
-1. This plugin requires internet for name verification.
+1. This plugin requires Internet for name verification.
 
 2. The plugin uses a command line tool [gnfinder]. You can install with
-   [homebrew] if available on your system, or copy an executable for your
+   [homebrew] (if available on your system), or copy an executable for your
    operating system according to [instructions][gnfinder install].
 
     ```bash
@@ -79,3 +79,4 @@ To find names `,f`
 [gnfinder]: https://github.com/gnames/gnfinder
 [gnfinder install]: https://github.com/gnames/gnfinder#install-as-a-command-line-app
 [nobom]: https://stackoverflow.com/questions/7297888/0xef-0xbb-0xbf-character-showing-up-in-files-how-to-remove-them
+[homebrew]: https://brew.sh/
